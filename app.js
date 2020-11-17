@@ -50,4 +50,8 @@ app.use(function(err, req, res, next) {
   res.render('error');
 });
 
+//Get Socket
+require("./services/ws.service").connect(process.env.WS_PORT)
+
+
 module.exports = app;

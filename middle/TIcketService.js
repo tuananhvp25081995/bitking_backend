@@ -4,6 +4,8 @@ const UserModel = mongoose.model("UserModel");
 const TicketModel = mongoose.model("ticketModel");
 const RoundModel = mongoose.model("RoundModel");
 var randomNumber = require('randomstring');
+const WebSocketService = require("../services/ws.service");
+const moment = require("moment");
 
 var sparkles = require('sparkles')();
 
@@ -17,6 +19,8 @@ exports.UpdateTicket = async function (req, res) {
     let companyBonus = ticketVals * 0.04; // money of company = 4%
     let builder = ticketVals * 0.02; // money of builder = 2%
     let fundMoney = ticketVals * 0.46; // money of fund = 46 %
+
+
 
     // Update balance after buy ticket
     const ticketUpdate = await UserModel.findOneAndUpdate({
@@ -59,8 +63,23 @@ exports.UpdateTicket = async function (req, res) {
             "revenue.builder": + builder,
             "fund.total44" : + fundMoney,
         }
-    })
-
+    },
+        {new:true}
+    )
+    if(fundUpdate){
+        //Convert and send to socket
+        let fundMoneyArray = fundUpdate.fund.total44.toString().split("").reverse();
+        let dataSocket = ["","","","","","",""];
+        let dataSocketLength = dataSocket.length - 1; 
+        for (const numb of fundMoneyArray) {
+            dataSocket[dataSocketLength] = numb;
+            dataSocketLength = dataSocketLength - 1;
+        }
+        WebSocketService.sendToAllClient({
+            action: "count-money",
+            data: dataSocket,
+        })
+    }
 
     //if update success , create ticket
     if (ticketUpdate !== null) { // 49% of total amount of tickets
@@ -78,8 +97,30 @@ exports.UpdateTicket = async function (req, res) {
                 roi : roi,
                 roundId: roundId,
                 postionInRound : countTicket + 1
-
             })
+            const user = await UserModel.findById(userid);
+            //Convert and send to socket
+            WebSocketService.sendToAllClient({
+                action: "recent",
+                data: {
+                    usermame: user.userName,
+                    roi: roi,
+                    time: moment(ticket.createdAt).format("YYYY-MM-DD HH:mm:ss")
+                },
+            });
+            let hour = moment(ticket.createdAt).format("HH:mm:ss");
+            let day = moment(ticket.createdAt).format("YYYY-MM-DD");
+            WebSocketService.sendToOneClient(userid,{
+                action: "my-ticket",
+                data: {
+                    userId: userid,
+                    ticketID: ticket.Code,
+                    hour: hour,
+                    day: day,
+                    roi: ticket.roi 
+                },
+            });
+
             // await ticket.save();
             await TicketModel.updateMany({
                 roundId: roundId,
