@@ -13,11 +13,14 @@
     "express": "~4.16.1",
     "http-errors": "~1.6.3",
     "md5": "^2.3.0",
+    "moment": "^2.29.1",
     "mongoose": "^5.10.14",
     "morgan": "~1.9.1",
     "random-number": "0.0.9",
     "randomstring": "^1.1.5",
     "socket.io": "^3.0.1",
-    "sparkles": "^1.0.1"
+    "sparkles": "^1.0.1",
+    "uuid": "^8.3.1",
+    "ws": "^7.4.0"
   }
 }
