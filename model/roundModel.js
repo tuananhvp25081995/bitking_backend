@@ -3,7 +3,7 @@ const Schema = mongoose.Schema;
 
 let schemaroundModel = new Schema(
     {
-        roundId: { type: String, default: "1" },
+        roundId: { type: String, default: "1" , unique:true },
         roundStartTime: { type: Date, default: Date.now() },
         roundEndTime: { type: Date, default: Date.now() },
         totalTicket: { type: Number, default: 0 },
@@ -18,9 +18,8 @@ let schemaroundModel = new Schema(
             builder: { type: Number, default: 0 },
         },
 
-
         fund: {
-            total49: { type: Number, default: 0 }
+            total44: { type: Number, default: 0 }
         },
 
         devide: {
