@@ -12,7 +12,7 @@ exports.UpdateTicket = async function (req, res) {
     var userid = req.userId;
     var roundId = req.roundId;
     //amout
-    let ticketVals = tickes * 10; // all money of ticket = 100%
+    let ticketVals = tickes * process.env.TICKET_VALUE; // all money of ticket = 100%
     let referralBonus = ticketVals * 0.01; // money of referral = 1%
     let companyBonus = ticketVals * 0.04; // money of company = 4%
     let builder = ticketVals * 0.02; // money of builder = 2%
@@ -68,7 +68,7 @@ exports.UpdateTicket = async function (req, res) {
         for (let i = 1; i <= tickes; i++) {
             sparkles.emit('add_ticket', { my: 'event' });
             const countTicket = await TicketModel.find({roundId: roundId}).countDocuments();
-            let roi = 10 * 0.49 / (countTicket + 1)
+            let roi = process.env.TICKET_VALUE * 0.49 / (countTicket + 1)
             const ticket = await TicketModel.create({
                 UserId: userid,
                 Code: randomNumber.generate({

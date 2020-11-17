@@ -19,7 +19,8 @@ let schemaroundModel = new Schema(
         },
 
         fund: {
-            total44: { type: Number, default: 0 }
+            total44: { type: Number, default: 0 },
+            develop:{type: Number, default: 0},
         },
 
         devide: {
