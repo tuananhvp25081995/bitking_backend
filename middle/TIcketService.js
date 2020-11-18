@@ -124,7 +124,6 @@ exports.UpdateTicket = async function (req, res) {
     )
     if(fundUpdate){
         //Convert and send to socket
-        console.log(fundUpdate.fund.total44);
         let fundMoneyArray = fundUpdate.fund.total44.toFixed(2).toString().replace(".","").split("").reverse();
         let dataSocket = ["","","","","","","","",""];
         let dataSocketLength = dataSocket.length - 1;
