@@ -14,7 +14,12 @@ exports.Buy = async function(req,res){
         res.status(400).json({error:"Missing userId"})
     }else if (!ticket){
         res.status(400).json({error:"Ticket must be not null"})
-    }else if (!roundId){
+        
+    }
+    else if(ticket > 1){
+        res.status(400).json({error:"Too fast"})
+    }
+    else if (!roundId){
         res.status(400).json({error:"Cannot found round id"})
     }
     else{

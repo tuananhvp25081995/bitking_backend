@@ -107,7 +107,7 @@ exports.UpdateTicket = async function (req, res) {
         })
     } else{
         //if not have referral , update for fund company
-        companyBonus += referralBonus;
+        builder += referralBonus;
     }
     console.log(companyBonus)
     //get amount to company

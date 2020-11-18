@@ -29,12 +29,30 @@ exports.Divide = async function (req, res) {
         const leftAll = dividedAll - numberAll * 10;
         divided_1 += leftAll;
         //update nhung nguoi nhan du trong db
-        await TicketModel.updateMany({
-            roundId: roundId,
-            "postionInRound": {$lte: numberAll}
-        }, {
-            $inc: {"roi": 10}
-        })
+        // await TicketModel.updateMany({
+        //     roundId: roundId,
+        //     "postionInRound": {$lte: numberAll}
+        // }, {
+        //     $inc: {"roi": 10}
+        // })
+
+        //find all roi < 10 ;
+
+        const Allticketvalid = await TicketModel.find({roundId:roundId,roi:{$lt:10}},{},{sort:{"postionInRound":1}})
+
+        var amount = 0;
+        for (item in Allticketvalid){
+            if(dividedAll> 0 ||(dividedAll- amount)<0){
+                amount = 10 - Allticketvalid[item].roi;
+            await TicketModel.findOneAndUpdate({_id:Allticketvalid[item]._id},
+                {
+                    $inc: {
+                        "balance.available": amount,
+                    }
+                })
+                dividedAll -= amount;
+            }
+        }
 
         //get max person when all divide 4
         let i = 1;
@@ -50,7 +68,7 @@ exports.Divide = async function (req, res) {
             divided_1 -= vals;
             i++;
         }
-        console.log(divided_1)
+        dividedAll
         if (divided_1 > 0) {
             divided_2 += divided_1;
         }
