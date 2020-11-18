@@ -21,7 +21,6 @@ exports.UpdateTicket = async function (req, res) {
     let fundMoney = ticketVals * 0.46; // money of fund = 46 %
 
 
-
     // Update balance after buy ticket
     const ticketUpdate = await UserModel.findOneAndUpdate({
         _id: userid,
@@ -33,60 +32,14 @@ exports.UpdateTicket = async function (req, res) {
         }
     })
 
-    //find affilate
-    const affilate = await UserModel.findOne({_id:userid});
-
-
-    sparkles.emit('my-event', { my: 'event' });
-    if (affilate.ReferralId !== ''){
-
-        // update amount for referral
-        const Referral = await UserModel.findOneAndUpdate({
-            _id: affilate.ReferralId,
-            // "balance.available": {$gte: ticketVals * 0.01}
-        },{
-            $inc: {
-                "balance.available": + referralBonus,
-            }
-        })
-    } else{
-        //if not have referral , update for fund company
-        companyBonus += referralBonus;
-    }
-    console.log(companyBonus)
-    //get amount to company
-    const fundUpdate =  await RoundModel.findOneAndUpdate({
-        roundId : roundId,
-    },{
-        $inc: {
-            "revenue.company": + companyBonus,
-            "revenue.builder": + builder,
-            "fund.total44" : + fundMoney,
-        }
-    },
-        {new:true}
-    )
-    if(fundUpdate){
-        //Convert and send to socket
-        let fundMoneyArray = fundUpdate.fund.total44.toString().split("").reverse();
-        let dataSocket = ["","","","","","",""];
-        let dataSocketLength = dataSocket.length - 1; 
-        for (const numb of fundMoneyArray) {
-            dataSocket[dataSocketLength] = numb;
-            dataSocketLength = dataSocketLength - 1;
-        }
-        WebSocketService.sendToAllClient({
-            action: "count-money",
-            data: dataSocket,
-        })
-    }
-
     //if update success , create ticket
+    let ticketdividedLeft = 0;
     if (ticketUpdate !== null) { // 49% of total amount of tickets
         //get number of ticket before
         for (let i = 1; i <= tickes; i++) {
             sparkles.emit('add_ticket', { my: 'event' });
             const countTicket = await TicketModel.find({roundId: roundId}).countDocuments();
+            console.log("count",countTicket);
             let roi = process.env.TICKET_VALUE * 0.49 / (countTicket + 1)
             const ticket = await TicketModel.create({
                 UserId: userid,
@@ -122,13 +75,65 @@ exports.UpdateTicket = async function (req, res) {
             });
 
             // await ticket.save();
-            await TicketModel.updateMany({
+            const dataUpdate = await TicketModel.updateMany({
                 roundId: roundId,
                 "roi" : {$lte: 10.7}
             },{
                 $inc:{"roi":roi}
             })
 
+            console.log("data",dataUpdate.nModified)
+            ticketdividedLeft += (countTicket - dataUpdate.nModified)*roi
+
         }
+    }
+
+
+    //find affilate
+    const affilate = await UserModel.findOne({_id:userid});
+
+
+    sparkles.emit('my-event', { my: 'event' });
+    if (affilate.ReferralId !== ''){
+
+        // update amount for referral
+        const Referral = await UserModel.findOneAndUpdate({
+            _id: affilate.ReferralId,
+            // "balance.available": {$gte: ticketVals * 0.01}
+        },{
+            $inc: {
+                "balance.available": + referralBonus,
+            }
+        })
+    } else{
+        //if not have referral , update for fund company
+        companyBonus += referralBonus;
+    }
+    console.log(companyBonus)
+    //get amount to company
+    const fundUpdate =  await RoundModel.findOneAndUpdate({
+            roundId : roundId,
+        },{
+            $inc: {
+                "revenue.company": + companyBonus,
+                "revenue.builder": + builder,
+                "fund.total44" :  (fundMoney + ticketdividedLeft),
+            }
+        },
+        {new:true}
+    )
+    if(fundUpdate){
+        //Convert and send to socket
+        let fundMoneyArray = fundUpdate.fund.total44.toString().split("").reverse();
+        let dataSocket = ["","","","","","",""];
+        let dataSocketLength = dataSocket.length - 1;
+        for (const numb of fundMoneyArray) {
+            dataSocket[dataSocketLength] = numb;
+            dataSocketLength = dataSocketLength - 1;
+        }
+        WebSocketService.sendToAllClient({
+            action: "count-money",
+            data: dataSocket,
+        })
     }
 }

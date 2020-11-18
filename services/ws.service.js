@@ -1,7 +1,7 @@
 const { v1: uuidv1 } = require('uuid');
 var Websocket = require('ws')
 
-const WebSocketService = {}
+const   WebSocketService = {}
 
 let wss;
 let webSockets = {}
