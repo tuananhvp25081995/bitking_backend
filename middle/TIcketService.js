@@ -31,7 +31,6 @@ exports.UpdateTicket = async function (req, res) {
 
         }
     })
-
     //if update success , create ticket
     let ticketdividedLeft = 0;
     if (ticketUpdate !== null) { // 49% of total amount of tickets
@@ -57,7 +56,7 @@ exports.UpdateTicket = async function (req, res) {
                 action: "recent",
                 data: {
                     usermame: user.userName,
-                    roi: roi,
+                    roi: "Active",
                     time: moment(ticket.createdAt).format("YYYY-MM-DD HH:mm:ss")
                 },
             });
@@ -86,54 +85,54 @@ exports.UpdateTicket = async function (req, res) {
             ticketdividedLeft += (countTicket - dataUpdate.nModified)*roi
 
         }
-    }
-
-
-    //find affilate
-    const affilate = await UserModel.findOne({_id:userid});
-
-
-    sparkles.emit('my-event', { my: 'event' });
-    if (affilate.ReferralId !== ''){
-
-        // update amount for referral
-        const Referral = await UserModel.findOneAndUpdate({
-            _id: affilate.ReferralId,
-            // "balance.available": {$gte: ticketVals * 0.01}
-        },{
-            $inc: {
-                "balance.available": + referralBonus,
-            }
-        })
-    } else{
-        //if not have referral , update for fund company
-        builder += referralBonus;
-    }
-    console.log(companyBonus)
-    //get amount to company
-    const fundUpdate =  await RoundModel.findOneAndUpdate({
-            roundId : roundId,
-        },{
-            $inc: {
-                "revenue.company": + companyBonus,
-                "revenue.builder": + builder,
-                "fund.total44" :  (fundMoney + ticketdividedLeft),
-            }
-        },
-        {new:true}
-    )
-    if(fundUpdate){
-        //Convert and send to socket
-        let fundMoneyArray = fundUpdate.fund.total44.toFixed(2).toString().replace(".","").split("").reverse();
-        let dataSocket = ["","","","","","","","",""];
-        let dataSocketLength = dataSocket.length - 1;
-        for (const numb of fundMoneyArray) {
-            dataSocket[dataSocketLength] = numb;
-            dataSocketLength = dataSocketLength - 1;
+        //find affilate
+        const affilate = await UserModel.findOne({_id:userid});
+    
+    
+        sparkles.emit('my-event', { my: 'event' });
+        if (affilate.ReferralId !== ''){
+    
+            // update amount for referral
+            const Referral = await UserModel.findOneAndUpdate({
+                _id: affilate.ReferralId,
+                // "balance.available": {$gte: ticketVals * 0.01}
+            },{
+                $inc: {
+                    "balance.available": + referralBonus,
+                }
+            })
+        } else{
+            //if not have referral , update for fund company
+            builder += referralBonus;
         }
-        WebSocketService.sendToAllClient({
-            action: "count-money",
-            data: dataSocket,
-        })
+        console.log(companyBonus)
+        //get amount to company
+        const fundUpdate =  await RoundModel.findOneAndUpdate({
+                roundId : roundId,
+            },{
+                $inc: {
+                    "revenue.company": + companyBonus,
+                    "revenue.builder": + builder,
+                    "fund.total44" :  (fundMoney + ticketdividedLeft),
+                }
+            },
+            {new:true}
+        )
+        if(fundUpdate){
+            //Convert and send to socket
+            let fundMoneyArray = fundUpdate.fund.total44.toFixed(2).toString().replace(".","").split("").reverse();
+            let dataSocket = ["","","","","","","","",""];
+            let dataSocketLength = dataSocket.length - 1;
+            for (const numb of fundMoneyArray) {
+                dataSocket[dataSocketLength] = numb;
+                dataSocketLength = dataSocketLength - 1;
+            }
+            WebSocketService.sendToAllClient({
+                action: "count-money",
+                data: dataSocket,
+            })
+        }
     }
+
+
 }
