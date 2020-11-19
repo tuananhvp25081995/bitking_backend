@@ -132,7 +132,10 @@ exports.UpdateTicket = async function (req, res) {
                 data: dataSocket,
             })
         }
-    }
 
+    }
+    await RoundModel.findOneAndUpdate({roundId: roundId},{
+        $inc:{"totalTicket":1}
+    })
 
 }
