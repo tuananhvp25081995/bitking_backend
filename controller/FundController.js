@@ -131,7 +131,7 @@ exports.Divide = async function (req, res) {
                     }
                 })
             }
-            await UserModel.findOneAndUpdate({roundId:roundId},{status:false});
+            await RoundModel.findOneAndUpdate({roundId:roundId},{active:false});
             res.status(200).json({message: "OK"})
         } catch (err){
             res.status(400).json({message:"Something went wrong"});

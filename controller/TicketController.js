@@ -30,7 +30,12 @@ exports.Buy = async function(req,res){
         res.status(400).json({error:"Cannot found round id"})
     }
     else{
-        const ticketUpdate = await TicketService.UpdateTicket({valTicket:ticket,userId:userId,roundId:roundId})
+        try{
+            const ticketUpdate = await TicketService.UpdateTicket({valTicket:ticket,userId:userId,roundId:roundId})
+        }catch(err){
+            res.status(400).json({message:"something went wrong"})
+        }
+        
         res.status(200).json({message:"OK"})
     }
 

@@ -19,7 +19,6 @@ exports.Transfer = async function(req, res){
     }else{
         try {
             var feeTransfer = value*0.01;
-            
             var log = await UserModel.findOneAndUpdate({userName:from},{
                 $inc:{"balance.available": - (value+feeTransfer),
                 $push:{tranferHistory :{
