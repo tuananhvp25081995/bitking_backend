@@ -21,6 +21,7 @@ exports.Transfer = async function(req, res){
             var feeTransfer = value*0.01;
             var log = await UserModel.findOneAndUpdate({userName:from},{
                 $inc:{"balance.available": - (value+feeTransfer),
+                },
                 $push:{tranferHistory :{
                     side:"out",
                     fee:feeTransfer,
@@ -28,19 +29,20 @@ exports.Transfer = async function(req, res){
                     from : from,
                     to : to,
                     time: Date.now()
-                }}
+                }
             }
             });
             console.log(log);
             await UserModel.findOneAndUpdate({userName:to},{
                 $inc:{"balance.available": + value,
+                },
                 $push:{tranferHistory :{
                     side:"in",
                     total: value,
                     from : from,
                     to : to,
                     time: Date.now()
-                }}
+                }
             }
             });
             
