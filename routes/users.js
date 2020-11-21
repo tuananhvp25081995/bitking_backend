@@ -8,5 +8,6 @@ router.get('/', function(req, res, next) {
 });
 
 router.post('/transfer',UserController.Transfer )
+router.post('/withdrawal', UserController.Withdrawal);
 
 module.exports = router;

@@ -43,6 +43,7 @@ const UserSchema = new Schema({
         withdrawalValue: { type: Number, default: 0 },
         txHash: { type: String, default: "0x" },
         id: { type: String, default: "withdrawalID" },
+        status: { type: String, default: "Pending" },
         time: { type: Date, default: Date.now() }
     }],
     tranferHistory: [{

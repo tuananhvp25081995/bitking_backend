@@ -56,3 +56,29 @@ exports.Transfer = async function(req, res){
 
 
 }
+
+exports.Withdrawal = async function(req, res){
+    try {
+        const data = req.body;
+        const fee = data.amount * 0.01;
+        const totalAmount = fee + data.amount;
+        var user = await UserModel.findByIdAndUpdate(data.userId,{
+            $inc: {
+                    "balance.available": - totalAmount,
+            },
+            $push:
+            {
+                withdrawal:
+                {
+                    symbol: data.symbol,
+                    fee: fee,
+                    withdrawalValue: data.amount,
+                    txHash: data.address,
+                }
+            }
+        });
+        return res.status(200).json({message:"Success"});
+    } catch (error) {
+        return res.status(400).json({message:"Failed"});
+    }
+}
