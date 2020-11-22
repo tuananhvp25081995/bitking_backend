@@ -22,6 +22,7 @@ exports.Transfer = async function(req, res){
     }else if (!value){
         res.status(400).json({code:"Failed", message:"Value must not be blank"});
     }else{
+        value = parseInt(value)
         var MoneyChange = UserForm.balance.available - value;
         if(MoneyChange >= 0 ){
 
