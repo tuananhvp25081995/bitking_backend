@@ -21,6 +21,9 @@ exports.Transfer = async function(req, res){
         res.status(400).json({code:"Failed", message:"Missing from userame"});
     }else if (!to){
         res.status(400).json({code:"Failed", message:"Missing to userame"});
+    }
+    else if (to == from){
+        res.status(400).json({code:"Failed", message:"you cannot create transaction for yourself"});
     }else if (!value){
         res.status(400).json({code:"Failed", message:"Value must not be blank"});
     }else{
