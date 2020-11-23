@@ -85,6 +85,9 @@ exports.Withdrawal = async function(req, res){
             return res.status(400).json({code:"Failed", message:"Missing userId"});
         }else{ 
             data.amount = parseFloat(data.amount)
+            if (data.amount < 1) {
+                return res.status(400).json({code:"Failed", message:"Minimum withdrawal = 1"});
+            }
             const fee = data.amount * 0.01;
             const totalAmount = fee + data.amount;
             var user = await UserModel.findByIdAndUpdate(data.userId,{
