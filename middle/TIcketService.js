@@ -10,7 +10,7 @@ const moment = require("moment");
 var sparkles = require('sparkles')();
 
 exports.UpdateTicket = async function (req, res) {
-    var tickes = req.valTicket;
+    var tickes = parseInt(req.valTicket);
     var userid = req.userId;
     var roundId = req.roundId;
     //amout
