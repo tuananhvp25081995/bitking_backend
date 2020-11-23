@@ -75,24 +75,35 @@ exports.Transfer = async function(req, res){
 exports.Withdrawal = async function(req, res){
     try {
         const data = req.body;
-        const fee = data.amount * 0.01;
-        const totalAmount = fee + data.amount;
-        var user = await UserModel.findByIdAndUpdate(data.userId,{
-            $inc: {
-                    "balance.available": - totalAmount,
-            },
-            $push:
-            {
-                withdrawal:
+        if (!data.amount){
+            return res.status(400).json({code:"Failed", message:"Missing amount"});
+        }else if (!data.symbol){
+            return res.status(400).json({code:"Failed", message:"Missing symbol"});
+        }else if (!data.address){
+            return res.status(400).json({code:"Failed", message:"Missing address"});
+        }else if (!data.userId){
+            return res.status(400).json({code:"Failed", message:"Missing userId"});
+        }else{ 
+            data.amount = parseFloat(data.amount)
+            const fee = data.amount * 0.01;
+            const totalAmount = fee + data.amount;
+            var user = await UserModel.findByIdAndUpdate(data.userId,{
+                $inc: {
+                        "balance.available": - totalAmount,
+                },
+                $push:
                 {
-                    symbol: data.symbol,
-                    fee: fee,
-                    withdrawalValue: data.amount,
-                    txHash: data.address,
+                    withdrawal:
+                    {
+                        symbol: data.symbol,
+                        fee: fee,
+                        withdrawalValue: data.amount,
+                        txHash: data.address,
+                    }
                 }
-            }
-        });
-        return res.status(200).json({message:"Success"});
+            });
+            return res.status(200).json({message:"Success"});
+        }
     } catch (error) {
         return res.status(400).json({message:"Failed"});
     }
