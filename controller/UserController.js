@@ -13,7 +13,7 @@ exports.Transfer = async function(req, res){
     //get User from 
     var UserForm = await UserModel.findOne({userName:from});
     var UserTo = await UserModel.findOne({userName:to});
-    value = parseInt(value)
+    value = parseFloat(value)
     var feeTransfer = value*0.01;
     
 
