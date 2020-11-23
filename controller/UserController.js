@@ -13,6 +13,8 @@ exports.Transfer = async function(req, res){
     //get User from 
     var UserForm = await UserModel.findOne({userName:from});
     var UserTo = await UserModel.findOne({userName:to});
+    value = parseInt(value)
+    var feeTransfer = value*0.01;
     
 
     if (!from){
@@ -22,12 +24,12 @@ exports.Transfer = async function(req, res){
     }else if (!value){
         res.status(400).json({code:"Failed", message:"Value must not be blank"});
     }else{
-        value = parseInt(value)
-        var MoneyChange = UserForm.balance.available - value;
+       
+        var MoneyChange = UserForm.balance.available - value - feeTransfer;
         if(MoneyChange >= 0 ){
 
             try {
-                var feeTransfer = value*0.01;
+                
                 var log = await UserModel.findOneAndUpdate({userName:from},{
                     $inc:{"balance.available": - (value+feeTransfer),
                     },
