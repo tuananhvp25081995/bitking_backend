@@ -13,7 +13,7 @@ const UserSchema = new Schema({
     ReferralId: { type: String, default: null },
 
     mail: {
-        email: { type: String, default: "" },
+        email: { type: String, default: "", unique:true },
         verifyCode: { type: String, default: "" },
         isVerify: { type: Boolean, default: false }
     },
