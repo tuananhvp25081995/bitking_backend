@@ -10,6 +10,11 @@ exports.Transfer = async function(req, res){
     let to = req.body.to;
     let value = req.body.value;
 
+    //get User from 
+    var UserForm = await UserModel.findOne({userName:from});
+    var UserTo = await UserModel.findOne({userName:to});
+    
+
     if (!from){
         res.status(400).json({code:"Failed", message:"Missing from userame"});
     }else if (!to){
@@ -17,41 +22,48 @@ exports.Transfer = async function(req, res){
     }else if (!value){
         res.status(400).json({code:"Failed", message:"Value must not be blank"});
     }else{
-        try {
-            var feeTransfer = value*0.01;
-            var log = await UserModel.findOneAndUpdate({userName:from},{
-                $inc:{"balance.available": - (value+feeTransfer),
-                },
-                $push:{tranferHistory :{
-                    side:"out",
-                    fee:feeTransfer,
-                    total: value+feeTransfer,
-                    from : from,
-                    to : to,
-                    time: Date.now()
+        var MoneyChange = UserForm.balance.available - value;
+        if(MoneyChange >= 0 ){
+
+            try {
+                var feeTransfer = value*0.01;
+                var log = await UserModel.findOneAndUpdate({userName:from},{
+                    $inc:{"balance.available": - (value+feeTransfer),
+                    },
+                    $push:{tranferHistory :{
+                        side:"out",
+                        fee:feeTransfer,
+                        total: value+feeTransfer,
+                        from : from,
+                        to : to,
+                        time: Date.now()
+                    }
                 }
-            }
-            });
-            console.log(log);
-            await UserModel.findOneAndUpdate({userName:to},{
-                $inc:{"balance.available": + value,
-                },
-                $push:{tranferHistory :{
-                    side:"in",
-                    total: value,
-                    from : from,
-                    to : to,
-                    time: Date.now()
+                });
+                console.log(log);
+                await UserModel.findOneAndUpdate({userName:to},{
+                    $inc:{"balance.available": + value,
+                    },
+                    $push:{tranferHistory :{
+                        side:"in",
+                        total: value,
+                        from : from,
+                        to : to,
+                        time: Date.now()
+                    }
                 }
+                });
+                
+           
+                res.status(200).json({message:"Success"});
+            } catch (err){
+                console.log(err)
+                res.status(400).json({message:"Failed"});
             }
-            });
-            
-       
-            res.status(200).json({message:"Success"});
-        } catch (err){
-            console.log(err)
-            res.status(400).json({message:"Failed"});
+        } else{
+            res.status(400).json({message:"Too much"});
         }
+       
     }
 
 
