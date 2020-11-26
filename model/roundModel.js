@@ -10,6 +10,11 @@ let schemaroundModel = new Schema(
         active: { type: Boolean, default: true },
         time: { type: Date, default: Date.now() },
 
+        refLog:[{
+            amount : {type:Number, default:0},
+            userRef : {type:String, },
+        }],
+
 
         revenue: {
             //4% for company

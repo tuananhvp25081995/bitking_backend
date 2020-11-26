@@ -6,7 +6,6 @@ const RoundModel = mongoose.model("RoundModel");
 
 
 exports.Buy = async function(req,res){
-    console.log("bingo", req.body);
     var userId = req.body.userId;
     var ticket = req.body.ticket;
     var roundId = req.body.roundId;
@@ -31,9 +30,10 @@ exports.Buy = async function(req,res){
     }
     else{
         try{
-            const ticketUpdate = await TicketService.UpdateTicket({valTicket:ticket,userId:userId,roundId:roundId})
+            const ticketUpdate =  TicketService.UpdateTicket({valTicket:ticket,userId:userId,roundId:roundId})
         }catch(err){
-            res.status(400).json({message:"something went wrong"})
+
+            return res.status(400).json({message:"something went wrong"})
         }
         
         res.status(200).json({message:"OK"})
