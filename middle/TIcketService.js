@@ -3,6 +3,7 @@ var md5 = require('md5');
 const UserModel = mongoose.model("UserModel");
 const TicketModel = mongoose.model("ticketModel");
 const RoundModel = mongoose.model("RoundModel");
+const UserRef = mongoose.model("UserRef");
 var randomNumber = require('randomstring');
 const WebSocketService = require("../services/ws.service");
 const moment = require("moment");
@@ -76,7 +77,7 @@ exports.UpdateTicket = async function ({ valTicket, userId, roundId }) {
         // await ticket.save();
         const dataUpdate = await TicketModel.updateMany({
             roundId: roundId,
-            "roi": { $lte: 10.7 }
+            "roi": {$lte: 10.07-roi}
         }, {
             $inc: { "roi": roi }
         })
@@ -94,6 +95,8 @@ exports.UpdateTicket = async function ({ valTicket, userId, roundId }) {
         sparkles.emit('my-event', { my: 'event' });
         if (affilate.ReferralId !== '') {
 
+            const Userss = await UserModel.findOne({_id:affilate.ReferralId})
+
             // update amount for referral
             const Referral = await UserModel.findOneAndUpdate({
                 _id: affilate.ReferralId,
@@ -101,6 +104,19 @@ exports.UpdateTicket = async function ({ valTicket, userId, roundId }) {
             }, {
                 $inc: {
                     "balance.available": +referralBonus,
+                },
+                $push:{
+                    tranferHistory:{
+                        side: "in",
+                        symbol: "BKT",
+                        fee: 0,
+                        total: referralBonus,
+                        from: userid,
+                        to: affilate.ReferralId,
+                        time:  Date.now() ,
+                        type:  "ref",
+                        note: "Received Referral from " + userid
+                    }
                 }
             })
             const rr = await RoundModel.findOneAndUpdate({
@@ -114,8 +130,14 @@ exports.UpdateTicket = async function ({ valTicket, userId, roundId }) {
                         }
                     }
                 })
-            console.log(rr)
 
+            await UserRef.create({
+                UserId: affilate.ReferralId,
+                from: userid,
+                RoundId: roundId,
+                UserNameRef:affilate.userName,
+                NameUser:Userss.userName
+            })
 
         } else {
             //if not have referral , update for fund company
@@ -149,7 +171,6 @@ exports.UpdateTicket = async function ({ valTicket, userId, roundId }) {
                 data: dataSocket,
             })
         }
-
     }
     await RoundModel.findOneAndUpdate({ roundId: roundId }, {
         $inc: { "totalTicket": 1 }

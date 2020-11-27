@@ -10,9 +10,14 @@ require('dotenv').config();
 //init modal
 require('./model/User/UserModel');
 require('./model/User/UserAddressDetailModel');
+require('./model/User/UserAffilateModel');
 require('./model/Ticket/TicketModel');
 require('./model/forwardHistory');
 require('./model/roundModel');
+
+//cronjob
+const roundCron = require("./ulti/roundUntil/cronRound")
+const cronRoundDivided = require("./ulti/roundUntil/cronRoundDivided")
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -57,6 +62,7 @@ app.use(function(err, req, res, next) {
 
 //Get Socket
 require("./services/ws.service").connect(process.env.WS_PORT)
-
+roundCron.createRound();
+cronRoundDivided.createRoundDivided();
 
 module.exports = app;
