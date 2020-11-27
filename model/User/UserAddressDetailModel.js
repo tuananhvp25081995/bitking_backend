@@ -3,7 +3,7 @@ const Schema = mongoose.Schema;
 
 const UserAddressDetailSchema = new Schema({
 
-    UserId: { type: String, default: null },
+    userId: { type: String, default: null },
     Address: { type: String },
     Symbol: { type: String },
     PrivateKey: { type: String },
