@@ -19,10 +19,11 @@ exports.Divide = async function (req, res) {
 
             var dividedAll = fundData * 0.75;
             var divided_1 = fundData * 0.1;
-            var divided_2 = fundData * 0.08;
+            var divided_2 = fundData * 0.02;
             var divided_3 = fundData * 0.02;
             var divided_4 = fundData * 0.02;
             var divided_5 = fundData * 0.03; // develop fund
+            var divided_6 = fundData * 0.06; // quy khac
 
             //get number of divided 10$
             const numberAll = Math.floor(dividedAll / 10);
@@ -151,6 +152,7 @@ exports.Divide = async function (req, res) {
             await RoundModel.findOneAndUpdate({roundId: roundId}, {
                 $inc: {
                     "fund.develop": divided_5,
+                    "fund.another" :divided_6,
                 }
             })
             //update money to balance of user

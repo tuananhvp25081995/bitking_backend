@@ -21,11 +21,14 @@ let schemaroundModel = new Schema(
             company: { type: Number, default: 0 },
             //2% for builder
             builder: { type: Number, default: 0 },
+
         },
 
         fund: {
             total44: { type: Number, default: 0 },
             develop:{type: Number, default: 0},
+            //6% to another fund
+            another:{type:Number, default:0},
         },
 
         devide: {

@@ -102,7 +102,8 @@ exports.UpdateTicket = async function (req, res) {
                     "balance.available": +referralBonus,
                 }
             })
-            const rr = await RoundModel.findOneAndUpdate({
+
+            await RoundModel.findOneAndUpdate({
                     roundId: roundId,
                 },
                 {
@@ -113,8 +114,24 @@ exports.UpdateTicket = async function (req, res) {
                         }
                     }
                 })
-            console.log(rr)
-
+            UserModel.findOneAndUpdate({
+                _id:affilate.ReferralId,
+            },
+                {
+                    $push:{
+                        tranferHistory:{
+                            side: "in",
+                            symbol: "BKT",
+                            fee: 0,
+                            total: referralBonus,
+                            from: userid,
+                            to: affilate.ReferralId,
+                            time:  Date.now() ,
+                            type:  "ref",
+                            note: "Received Referral from " + userid
+                        }
+                    }
+                })
 
         } else {
             //if not have referral , update for fund company
@@ -148,7 +165,6 @@ exports.UpdateTicket = async function (req, res) {
                 data: dataSocket,
             })
         }
-
     }
     await RoundModel.findOneAndUpdate({roundId: roundId}, {
         $inc: {"totalTicket": 1}
