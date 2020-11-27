@@ -76,7 +76,7 @@ exports.UpdateTicket = async function (req, res) {
         // await ticket.save();
         const dataUpdate = await TicketModel.updateMany({
             roundId: roundId,
-            "roi": {$lte: 10.07}
+            "roi": {$lte: 10.07-roi}
         }, {
             $inc: {"roi": roi}
         })
@@ -94,6 +94,8 @@ exports.UpdateTicket = async function (req, res) {
         sparkles.emit('my-event', {my: 'event'});
         if (affilate.ReferralId !== '') {
 
+            const Userss = await UserModel.findOne({_id:affilate.ReferralId})
+
             // update amount for referral
             const Referral = await UserModel.findOneAndUpdate({
                 _id: affilate.ReferralId,
@@ -101,6 +103,19 @@ exports.UpdateTicket = async function (req, res) {
             }, {
                 $inc: {
                     "balance.available": +referralBonus,
+                },
+                $push:{
+                    tranferHistory:{
+                        side: "in",
+                        symbol: "BKT",
+                        fee: 0,
+                        total: referralBonus,
+                        from: userid,
+                        to: affilate.ReferralId,
+                        time:  Date.now() ,
+                        type:  "ref",
+                        note: "Received Referral from " + userid
+                    }
                 }
             })
 
@@ -115,29 +130,13 @@ exports.UpdateTicket = async function (req, res) {
                         }
                     }
                 })
-            await UserModel.findOneAndUpdate({
-                _id:affilate.ReferralId,
-            },
-                {
-                    $push:{
-                        tranferHistory:{
-                            side: "in",
-                            symbol: "BKT",
-                            fee: 0,
-                            total: referralBonus,
-                            from: userid,
-                            to: affilate.ReferralId,
-                            time:  Date.now() ,
-                            type:  "ref",
-                            note: "Received Referral from " + userid
-                        }
-                    }
-                })
+
             await UserRef.create({
                 UserId: affilate.ReferralId,
                 from: userid,
                 RoundId: roundId,
-                Value: referralBonus,
+                UserNameRef:affilate.userName,
+                NameUser:Userss.userName
             })
 
         } else {

@@ -3,9 +3,10 @@ var md5 = require('md5');
 const UserModel = mongoose.model("UserModel");
 const TicketModel = mongoose.model("ticketModel");
 const RoundModel = mongoose.model("RoundModel");
+const Ref = mongoose.model("UserRef");
 var randomNumber = require('randomstring');
 
-exports.DivedRound =async function(req,res){
+exports.DivedRound = async function (req, res) {
     const roundId = req.roundId;
 
 
@@ -17,8 +18,8 @@ exports.DivedRound =async function(req,res){
             var fundData = Round.fund.total44; // 100% of 44% from ticket
             var Allticket = await TicketModel.find({roundId: roundId}).countDocuments();
 
-            var dividedAll = fundData * 0.75;
-            var divided_1 = fundData * 0.1;
+            var dividedAll = fundData * 0.75; // divided all number
+            var divided_1 = fundData * 0.1; // divided
             var divided_2 = fundData * 0.02;
             var divided_3 = fundData * 0.02;
             var divided_4 = fundData * 0.02;
@@ -51,7 +52,7 @@ exports.DivedRound =async function(req,res){
                     await TicketModel.findOneAndUpdate({_id: Allticketvalid[item]._id},
                         {
                             $inc: {
-                                "balance.available": amount,
+                                "roi": amount,
                             }
                         })
                     dividedAll -= amount;
@@ -119,24 +120,21 @@ exports.DivedRound =async function(req,res){
                 }
             });
             // 2% to 20% max affilated
-            var all_affilated_round = await RoundModel.findOne({roundId:roundId});
+            var all_affilated_round = await RoundModel.findOne({roundId: roundId});
             var total_deposit_affilated = JSON.parse(JSON.stringify(all_affilated_round.refLog));
             var affilated_round_data = {};
 
-            console.log(all_affilated_round)
 
-            for (item in total_deposit_affilated){
-                if(affilated_round_data[total_deposit_affilated[item].userRef]){
+
+            for (item in total_deposit_affilated) {
+                if (affilated_round_data[total_deposit_affilated[item].userRef]) {
                     affilated_round_data[total_deposit_affilated[item].userRef].count++
-                }else{
+                } else {
                     affilated_round_data[total_deposit_affilated[item].userRef] = {count: 1}
                 }
             }
 
-            console.log(affilated_round_data )
-
-
-
+            // console.log(affilated_round_data)
 
 
             //8% to left
@@ -152,17 +150,54 @@ exports.DivedRound =async function(req,res){
             await RoundModel.findOneAndUpdate({roundId: roundId}, {
                 $inc: {
                     "fund.develop": divided_5,
-                    "fund.another" :divided_6,
+                    "fund.another": divided_6,
                 }
             })
             //update money to balance of user
 
-            const BalanceUser = await TicketModel.aggregate([{
-                $group: {
+            const Top20 = await Ref.aggregate([
+                {$match: {RoundId: roundId}},
+                {$group: {
                     _id: "$UserId",
-                    totalAmount: {$sum: "$roi"}
-                },
-            }])
+                    totalAmount: {$sum: "$Value"}},},
+                {$sort: { totalAmount: -1 } }
+            ])
+
+            if (Top20.length < 20) {
+                var max_ref = divided_3 / Top20.length;
+                for ( let e = 0; e<Top20.length ; e++){
+                    await UserModel.findOneAndUpdate({_id:Top20[e]._id},{
+                        $inc: {"balance.available": max_ref},
+                        $push: {
+                            tranferHistory: {
+                                side: "in",
+                                total: winner_vals,
+                                from: "System",
+                                to: Top20[e]._id,
+                                type: "reward20",
+                                time: Date.now()
+                            }
+                        }
+                    })
+                }
+            } else if (Top20.length >= 20){
+                var max_ref = divided_3 / 20;
+                for ( let e = 0; e<20 ; e++){
+                    await UserModel.findOneAndUpdate({_id:Top20[e]._id},{
+                        $inc: {"balance.available": max_ref},
+                        $push: {
+                            tranferHistory: {
+                                side: "in",
+                                total: winner_vals,
+                                from: "System",
+                                to: Top20[e]._id,
+                                type: "reward20",
+                                time: Date.now()
+                            }
+                        }
+                    })
+                }
+            }
 
             for (var item = 0; item < BalanceUser.length; item++) {
                 var divideUserId = BalanceUser[item]._id;
@@ -170,6 +205,16 @@ exports.DivedRound =async function(req,res){
                 await UserModel.findOneAndUpdate({_id: divideUserId}, {
                     $inc: {
                         "balance.available": divideAmount
+                    },
+                    $push: {
+                        tranferHistory: {
+                            side: "in",
+                            total: divideAmount,
+                            from: "System",
+                            to: divideUserId,
+                            type: "normal",
+                            time: Date.now()
+                        }
                     }
                 })
             }

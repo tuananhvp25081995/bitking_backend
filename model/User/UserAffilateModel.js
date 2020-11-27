@@ -8,6 +8,9 @@ const UserAddressDetailSchema = new Schema({
     Symbol: { type: String, default:"BKT" },
     RoundId: { type: String },
     Value: { type: Number },
+    UserNameRef:{ type: String },
+    NameUser:{ type: String },
+
 
 }, {
     timestamps: true,

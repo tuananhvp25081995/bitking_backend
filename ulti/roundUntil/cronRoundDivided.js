@@ -16,12 +16,9 @@ cronRoundDivided.createRoundDivided = () => {
             "roundStartTime": {$lte: dateNow},
             "roundEndTime": {$gt: dateNow}
         });
-        var roundId = activeRound._id;
+        var roundId = activeRound.roundId;
         console.log(roundId)
-        var result = await DivedService.DivedRound({roundId:roundId});
-
-        console.log(result)
-
+        await DivedService.DivedRound({roundId:roundId});
 
 
 
