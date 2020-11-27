@@ -10,12 +10,12 @@ exports.Divide = async function (req, res) {
 
 
     if (!roundId) {
-        res.status(400).json({message: "Round id cannot been null"});
+        res.status(400).json({ message: "Round id cannot been null" });
     } else {
         try {
-            var Round = await RoundModel.findOne({roundId: roundId, active: true});
+            var Round = await RoundModel.findOne({ roundId: roundId, active: true });
             var fundData = Round.fund.total44; // 100% of 44% from ticket
-            var Allticket = await TicketModel.find({roundId: roundId}).countDocuments();
+            var Allticket = await TicketModel.find({ roundId: roundId }).countDocuments();
 
             var dividedAll = fundData * 0.75;
             var divided_1 = fundData * 0.1;
@@ -41,14 +41,14 @@ exports.Divide = async function (req, res) {
 
             const Allticketvalid = await TicketModel.find({
                 roundId: roundId,
-                roi: {$lt: 10}
-            }, {}, {sort: {"postionInRound": 1}})
+                roi: { $lt: 10 }
+            }, {}, { sort: { "postionInRound": 1 } })
 
             var amount = 0;
             for (item in Allticketvalid) {
                 if (dividedAll > 0 || (dividedAll - amount) < 0) {
                     amount = 10 - Allticketvalid[item].roi;
-                    await TicketModel.findOneAndUpdate({_id: Allticketvalid[item]._id},
+                    await TicketModel.findOneAndUpdate({ _id: Allticketvalid[item]._id },
                         {
                             $inc: {
                                 "balance.available": amount,
@@ -67,7 +67,7 @@ exports.Divide = async function (req, res) {
                     roundId: roundId,
                     postionInRound: numberAll + i,
                 }, {
-                    $inc: {"roi": vals}
+                    $inc: { "roi": vals }
                 });
                 divided_1 -= vals;
                 i++;
@@ -82,58 +82,58 @@ exports.Divide = async function (req, res) {
 
             let winner_vals = divided_4 / 3;
             // find lastest
-            var lastest_row = await TicketModel.find({roundId: roundId}, {}, {
-                sort: {'createdAt': -1}
+            var lastest_row = await TicketModel.find({ roundId: roundId }, {}, {
+                sort: { 'createdAt': -1 }
             }).limit(2);
 
             //3nd
             for (i in lastest_row) {
-                await UserModel.findOneAndUpdate({_id: lastest_row[i].UserId}, {
-                    $inc: {"balance.available": winner_vals},
+                await UserModel.findOneAndUpdate({ _id: lastest_row[i].userId }, {
+                    $inc: { "balance.available": winner_vals },
                     $push: {
                         tranferHistory: {
                             side: "in",
                             total: winner_vals,
                             from: "System",
-                            to: lastest_row[i].UserId,
+                            to: lastest_row[i].userId,
                             type: "reward3",
                             time: Date.now()
                         }
                     }
                 })
             }
-            var newest_row = await TicketModel.findOne({roundId: roundId}, {}, {
-                sort: {'createdAt': 1}
+            var newest_row = await TicketModel.findOne({ roundId: roundId }, {}, {
+                sort: { 'createdAt': 1 }
             });
-            await UserModel.findOneAndUpdate({_id: newest_row.UserId}, {
-                $inc: {"balance.available": winner_vals},
+            await UserModel.findOneAndUpdate({ _id: newest_row.userId }, {
+                $inc: { "balance.available": winner_vals },
                 $push: {
                     tranferHistory: {
                         side: "in",
                         total: winner_vals,
                         from: "System",
-                        to: newest_row.UserId,
+                        to: newest_row.userId,
                         type: "reward3",
                         time: Date.now()
                     }
                 }
             });
             // 2% to 20% max affilated
-            var all_affilated_round = await RoundModel.findOne({roundId:roundId});
+            var all_affilated_round = await RoundModel.findOne({ roundId: roundId });
             var total_deposit_affilated = JSON.parse(JSON.stringify(all_affilated_round.refLog));
             var affilated_round_data = {};
 
             console.log(all_affilated_round)
 
-            for (item in total_deposit_affilated){
-                if(affilated_round_data[total_deposit_affilated[item].userRef]){
+            for (item in total_deposit_affilated) {
+                if (affilated_round_data[total_deposit_affilated[item].userRef]) {
                     affilated_round_data[total_deposit_affilated[item].userRef].count++
-                }else{
-                    affilated_round_data[total_deposit_affilated[item].userRef] = {count: 1}
+                } else {
+                    affilated_round_data[total_deposit_affilated[item].userRef] = { count: 1 }
                 }
             }
 
-            console.log(affilated_round_data )
+            console.log(affilated_round_data)
 
 
 
@@ -143,13 +143,13 @@ exports.Divide = async function (req, res) {
             let var_update_left = divided_2 / (Allticket - i + numberAll);
             await TicketModel.updateMany({
                 roundId: roundId,
-                "postionInRound": {$lte: number_after_divide_2}
+                "postionInRound": { $lte: number_after_divide_2 }
             }, {
-                $inc: {"roi": var_update_left}
+                $inc: { "roi": var_update_left }
             })
 
             // 2% to develop fund
-            await RoundModel.findOneAndUpdate({roundId: roundId}, {
+            await RoundModel.findOneAndUpdate({ roundId: roundId }, {
                 $inc: {
                     "fund.develop": divided_5,
                     "fund.another" :divided_6,
@@ -159,24 +159,24 @@ exports.Divide = async function (req, res) {
 
             const BalanceUser = await TicketModel.aggregate([{
                 $group: {
-                    _id: "$UserId",
-                    totalAmount: {$sum: "$roi"}
+                    _id: "$userId",
+                    totalAmount: { $sum: "$roi" }
                 },
             }])
 
             for (var item = 0; item < BalanceUser.length; item++) {
-                var divideUserId = BalanceUser[item]._id;
+                var divideuserId = BalanceUser[item]._id;
                 var divideAmount = BalanceUser[item].totalAmount;
-                await UserModel.findOneAndUpdate({_id: divideUserId}, {
+                await UserModel.findOneAndUpdate({ _id: divideuserId }, {
                     $inc: {
                         "balance.available": divideAmount
                     }
                 })
             }
-            await RoundModel.findOneAndUpdate({roundId: roundId}, {active: true});
-            res.status(200).json({message: "OK"})
+            await RoundModel.findOneAndUpdate({ roundId: roundId }, { active: true });
+            res.status(200).json({ message: "OK" })
         } catch (err) {
-            res.status(400).json({message: "Something went wrong"});
+            res.status(400).json({ message: "Something went wrong" });
 
         }
 

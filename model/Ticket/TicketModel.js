@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const TicketSchema = new Schema({
-    UserId: { type: String },
+    userId: { type: String },
     Code: { type: String, default: null },
     roi: { type: Number, default: 0 },
     datePurchased: { type: Date, default: Date.now() },

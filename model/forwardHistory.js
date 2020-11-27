@@ -3,7 +3,7 @@ const Schema = mongoose.Schema;
 
 let schemaforwardHistory = new Schema(
     {
-        UserId: { type: String, default: "" },
+        userId: { type: String, default: "" },
         currency: { type: String, default: "ETH" },
         type: { type: String, default: "PAYMENT_FORWARDING" },
         message: { type: String, default: "1" },
