@@ -3,6 +3,7 @@ var md5 = require('md5');
 const UserModel = mongoose.model("UserModel");
 const TicketModel = mongoose.model("ticketModel");
 const RoundModel = mongoose.model("RoundModel");
+const UserRef = mongoose.model("UserRef");
 var randomNumber = require('randomstring');
 const WebSocketService = require("../services/ws.service");
 const moment = require("moment");
@@ -75,7 +76,7 @@ exports.UpdateTicket = async function (req, res) {
         // await ticket.save();
         const dataUpdate = await TicketModel.updateMany({
             roundId: roundId,
-            "roi": {$lte: 10.7}
+            "roi": {$lte: 10.07}
         }, {
             $inc: {"roi": roi}
         })
@@ -114,7 +115,7 @@ exports.UpdateTicket = async function (req, res) {
                         }
                     }
                 })
-            UserModel.findOneAndUpdate({
+            await UserModel.findOneAndUpdate({
                 _id:affilate.ReferralId,
             },
                 {
@@ -132,6 +133,12 @@ exports.UpdateTicket = async function (req, res) {
                         }
                     }
                 })
+            await UserRef.create({
+                UserId: affilate.ReferralId,
+                from: userid,
+                RoundId: roundId,
+                Value: referralBonus,
+            })
 
         } else {
             //if not have referral , update for fund company

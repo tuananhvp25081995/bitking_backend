@@ -5,11 +5,12 @@ const TicketModel = mongoose.model("ticketModel");
 const RoundModel = mongoose.model("RoundModel");
 var randomNumber = require('randomstring');
 
-exports.Divide = async function (req, res) {
-    const roundId = req.body.roundId;
+exports.DivedRound =async function(req,res){
+    const roundId = req.roundId;
+
 
     if (!roundId) {
-        return false
+        res.status(400).json({message: "Round id cannot been null"});
     } else {
         try {
             var Round = await RoundModel.findOne({roundId: roundId, active: true});
@@ -172,15 +173,14 @@ exports.Divide = async function (req, res) {
                     }
                 })
             }
-            await RoundModel.findOneAndUpdate({roundId: roundId}, {active: true});
-            res.status(200).json({message: "OK"})
+            await RoundModel.findOneAndUpdate({roundId: roundId}, {active: false});
+
         } catch (err) {
-            res.status(400).json({message: "Something went wrong"});
+
 
         }
 
         //get all ticket in round
 
     }
-
 }
