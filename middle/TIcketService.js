@@ -77,7 +77,7 @@ exports.UpdateTicket = async function ({ valTicket, userId, roundId }) {
         // await ticket.save();
         const dataUpdate = await TicketModel.updateMany({
             roundId: roundId,
-            "roi": {$lte: 10.07-roi}
+            "roi": { $lte: 10.07 - roi }
         }, {
             $inc: { "roi": roi }
         })
@@ -95,7 +95,7 @@ exports.UpdateTicket = async function ({ valTicket, userId, roundId }) {
         sparkles.emit('my-event', { my: 'event' });
         if (affilate.ReferralId !== '') {
 
-            const Userss = await UserModel.findOne({_id:affilate.ReferralId})
+            const Userss = await UserModel.findOne({ _id: affilate.ReferralId })
 
             // update amount for referral
             const Referral = await UserModel.findOneAndUpdate({
@@ -105,17 +105,17 @@ exports.UpdateTicket = async function ({ valTicket, userId, roundId }) {
                 $inc: {
                     "balance.available": +referralBonus,
                 },
-                $push:{
-                    tranferHistory:{
+                $push: {
+                    tranferHistory: {
                         side: "in",
                         symbol: "BKT",
                         fee: 0,
                         total: referralBonus,
-                        from: userid,
+                        from: userId,
                         to: affilate.ReferralId,
-                        time:  Date.now() ,
-                        type:  "ref",
-                        note: "Received Referral from " + userid
+                        time: Date.now(),
+                        type: "ref",
+                        note: "Received Referral from " + userId
                     }
                 }
             })
@@ -135,8 +135,8 @@ exports.UpdateTicket = async function ({ valTicket, userId, roundId }) {
                 UserId: affilate.ReferralId,
                 from: userid,
                 RoundId: roundId,
-                UserNameRef:affilate.userName,
-                NameUser:Userss.userName
+                UserNameRef: affilate.userName,
+                NameUser: Userss.userName
             })
 
         } else {
