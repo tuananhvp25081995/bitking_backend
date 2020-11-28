@@ -16,8 +16,8 @@ require('./model/forwardHistory');
 require('./model/roundModel');
 
 //cronjob
-const roundCron = require("./ulti/roundUntil/cronRound")
-const cronRoundDivided = require("./ulti/roundUntil/cronRoundDivided")
+const roundCron = require("./until/roundUntil/cronRound")
+const cronRoundDivided = require("./until/roundUntil/cronRoundDivided")
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -30,9 +30,9 @@ var app = express();
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 app.use(cors({
-    origin: '*',
-    optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
-  }))
+  origin: '*',
+  optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
+}))
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -45,12 +45,12 @@ app.use('/ticket', ticketRouter);
 app.use('/fund', fundRouter);
 
 // catch 404 and forward to error handler
-app.use(function(req, res, next) {
+app.use(function (req, res, next) {
   next(createError(404));
 });
 
 // error handler
-app.use(function(err, req, res, next) {
+app.use(function (err, req, res, next) {
   // set locals, only providing error in development
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};
@@ -62,7 +62,7 @@ app.use(function(err, req, res, next) {
 
 //Get Socket
 require("./services/ws.service").connect(process.env.WS_PORT)
-roundCron.createRound();
-cronRoundDivided.createRoundDivided();
+roundCron.cronCreateRound();
+cronRoundDivided.createCronRoundDivided();
 
 module.exports = app;

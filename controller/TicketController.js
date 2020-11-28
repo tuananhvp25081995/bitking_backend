@@ -10,14 +10,9 @@ exports.Buy = async function (req, res) {
     var ticket = req.body.ticket;
     let timeNow = Date.now()
     var checkRound = await RoundModel.findOne({
-        $and: [
-            {
-                "roundStartTime": { $lte: timeNow }
-            },
-            {
-                "roundEndTime": { $gt: timeNow }
-            }
-        ]
+        $and: [{
+            "roundStartTime": { $lte: timeNow }
+        }, { "roundEndTime": { $gt: timeNow } }]
     });
 
     // console.log(checkRound);

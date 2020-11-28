@@ -5,6 +5,7 @@ let mongoOption = {
     useUnifiedTopology: true,
     poolSize: 1,
     useFindAndModify: false,
+    useCreateIndex: true
 
 };
 mongoose.connect(process.env.MONGO_URL, mongoOption)
