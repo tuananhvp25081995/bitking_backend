@@ -133,7 +133,7 @@ exports.UpdateTicket = async function ({ valTicket, userId, roundId }) {
 
             await UserRef.create({
                 UserId: affilate.ReferralId,
-                from: userid,
+                from: userId,
                 RoundId: roundId,
                 UserNameRef: affilate.userName,
                 NameUser: Userss.userName
