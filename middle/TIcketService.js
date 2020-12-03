@@ -10,6 +10,7 @@ const moment = require("moment");
 
 var sparkles = require('sparkles')();
 
+
 exports.UpdateTicket = async function ({ valTicket, userId, roundId }) {
     console.log({ valTicket, userId, roundId });
     let tickes = parseInt(valTicket);
@@ -38,8 +39,10 @@ exports.UpdateTicket = async function ({ valTicket, userId, roundId }) {
     if (ticketUpdate !== null) { // 49% of total amount of tickets
         //get number of ticket before
         sparkles.emit('add_ticket', { my: 'event' });
+        console.time("timetake")
         const countTicket = await TicketModel.find({ roundId: roundId }).countDocuments();
         console.log("count", countTicket);
+
         let roi = process.env.TICKET_VALUE * 0.49 / (countTicket + 1)
         const ticket = await TicketModel.create({
             userId: userId,
@@ -51,6 +54,7 @@ exports.UpdateTicket = async function ({ valTicket, userId, roundId }) {
             roundId: roundId,
             postionInRound: countTicket + 1
         })
+
         const user = await UserModel.findById(userId);
         //Convert and send to socket
         WebSocketService.sendToAllClient({
@@ -77,6 +81,7 @@ exports.UpdateTicket = async function ({ valTicket, userId, roundId }) {
         // await ticket.save();
         const dataUpdate = await TicketModel.updateMany({
             roundId: roundId,
+            _id: {$ne: ticket._id},
             "roi": { $lte: 10.07 - roi }
         }, {
             $inc: { "roi": roi }
@@ -171,9 +176,13 @@ exports.UpdateTicket = async function ({ valTicket, userId, roundId }) {
                 data: dataSocket,
             })
         }
+
     }
+
     await RoundModel.findOneAndUpdate({ roundId: roundId }, {
         $inc: { "totalTicket": 1 }
     })
+    console.timeEnd("timetake")
+
 
 }
