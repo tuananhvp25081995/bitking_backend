@@ -10,129 +10,148 @@ const moment = require("moment");
 
 var sparkles = require('sparkles')();
 
+exports.UpdateTicket = async function ({ userId, roundId, bulkId }) {
+    console.log({ userId, roundId });
+    let estTime = Date.now()
 
-exports.UpdateTicket = async  function ({valTicket, userId, roundId}) {
-    console.log({valTicket, userId, roundId});
-    let tickes = parseInt(valTicket);
-
-    //amount
-    let ticketVals = tickes * 10; // all money of ticket = 100%
+    let ticketVals = 10; // all money of ticket = 100%
     let referralBonus = ticketVals * 0.01; // money of referral = 1%
     let companyBonus = ticketVals * 0.04; // money of company = 4%
     let builder = ticketVals * 0.02; // money of builder = 2%
-    let fundMoney = ticketVals * 0.46; // money of fund = 46 %
-
+    let fundMoney = ticketVals * 0.44; // money of fund = 44 %
 
     // Update balance after buy ticket
-    const ticketUpdate = await UserModel.findOneAndUpdate({
+    let user = await UserModel.findOneAndUpdate({
         _id: userId,
-        "balance.available": {$gte: ticketVals}
+        "balance.available": { $gte: 10 }
     }, {
         $inc: {
-            "balance.available": -ticketVals,
+            "balance.available": -10,
         }
-    })
+    }, { new: true })
     //find User
-    const Users = await UserModel.findOne({_id: userId,});
     //if update success , create ticket
-    let ticketdividedLeft = 0;
-    if (ticketUpdate !== null) { // 49% of total amount of tickets
+    if (user) { // 49% of total amount of tickets
         //get number of ticket before
-        sparkles.emit('add_ticket', {my: 'event'});
-        console.time("timetake")
-        const countTicket = await TicketModel.find({roundId: roundId}).countDocuments();
-        console.log("count", countTicket);
+        const countTicket = await TicketModel.find({ roundId }).countDocuments();
+        console.log("number ticket in current round", countTicket);
 
         let roi = process.env.TICKET_VALUE * 0.49 / (countTicket + 1)
-        const ticket = await TicketModel.create({
-            userId: userId,
+        let roiToTicket = roi
+        if (roi >= 0.1) roiToTicket = 0.1
+        let roileft = process.env.TICKET_VALUE * 0.49 - roiToTicket
+        let newTicket = await TicketModel.create({
+            userId,
             Code: randomNumber.generate({
                 length: 15,
                 charset: 'numeric'
             }),
-            roi: roi,
-            userName:Users.userName,
-            roundId: roundId,
-            postionInRound: countTicket + 1
+            userName: user.userName,
+            roundId,
+            roi: roiToTicket,
+            postionInRound: countTicket + 1,
+            bulkId
         })
-
-        const user = await UserModel.findById(userId);
         //Convert and send to socket
         WebSocketService.sendToAllClient({
             action: "recent",
             data: {
                 usermame: user.userName,
-                roi: "Active",
-                time: md5(ticket.createdAt).toString().slice(0, 14)
+                bulkId,
+                time: md5(newTicket.createdAt).toString().slice(0, 14)
             }
         });
-        let hour = moment(ticket.createdAt).format("HH:mm:ss");
-        let day = moment(ticket.createdAt).format("YYYY-MM-DD");
         WebSocketService.sendToOneClient(userId, {
             action: "my-ticket",
             data: {
                 userId: userId,
-                ticketID: ticket.Code,
-                hour: hour,
-                day: day,
-                roi: ticket.roi
-            },
+                ticketID: newTicket.Code,
+                bulkId,
+                hour: moment(newTicket.createdAt).format("HH:mm:ss"),
+                day: moment(newTicket.createdAt).format("YYYY-MM-DD"),
+                roi: newTicket.roi,
+                createdAt: newTicket.createdAt
+            }
         });
 
-        // await ticket.save();
-        const dataUpdate = await TicketModel.updateMany({
-            roundId: roundId,
-            _id: {$ne: ticket._id},
-            "roi": {$lte: 10.07 - roi}
+
+        let beforeTicket = await TicketModel.find({
+            roundId,
+            roi: { $lt: 0.1 },
+            _id: { $ne: newTicket._id }
         }, {
-            $inc: {"roi": roi}
+            roi: 1,
+            _id: 1
         })
+        console.log("ticket roi <0.1", beforeTicket);
 
+        for (tick of beforeTicket) {
+            console.log("roileft before each for: ", roileft)
 
-        console.log("data", dataUpdate.nModified)
-        if (countTicket > 0 && parseInt(countTicket) + 1 >= parseInt(dataUpdate.nModified)) {
-            ticketdividedLeft += (parseInt(countTicket) + 1 - parseInt(dataUpdate.nModified)) * roi
-        }
-
-        //get all data modify and get roi
-        const dataUserRoiBonnus = await TicketModel.aggregate([{$match: {roundId: roundId}},
-            {
-                $group: {
-                    _id: "$userId",
-                    roi: {"$sum":"$roi"}
-                }
+            if (!roileft) {
+                console.log("roileft is 0, break forloop");
+                break;
             }
-        ]);
-        // socket get data roi bonnus
-        if (dataUserRoiBonnus){
-            for (var i = 0 ; i < dataUserRoiBonnus.length; i++){
-                WebSocketService.sendToOneClient(dataUserRoiBonnus[i]._id,{
-                    action: "my-profit",
-                    data: {
-                        userId: dataUserRoiBonnus[i]._id,
-                        profit: dataUserRoiBonnus[i].roi,
-                    },
+            if (roileft <= roi) {
+                let toAddTick = roileft
+                if (tick.roi + toAddTick > 0.1) {
+                    toAddTick = 0.1 - tick.roi
+                    roileft -= toAddTick
+                }
+                await TicketModel.findByIdAndUpdate(tick._id, {
+                    $inc: {
+                        "roi": toAddTick
+                    }
+                })
+                console.log("roileft <=roi, update success, break forloop");
+                break
+            }
+
+            if (roileft > roi) {
+                let toAddTick = roi
+                if (tick.roi + toAddTick > 0.1) {
+                    toAddTick = 0.1 - tick.roi
+                }
+                roileft -= toAddTick
+                await TicketModel.findByIdAndUpdate(tick._id, {
+                    $inc: {
+                        "roi": toAddTick
+                    }
                 })
             }
         }
 
 
-        console.log("databonus",dataUserRoiBonnus);
+        //get users roi in round then send noti tu users
+        TicketModel.aggregate([{ $match: { roundId } },
+        {
+            $group: {
+                _id: "$userId",
+                roi: { "$sum": "$roi" }
+            }
+            //add pipeline project only _id and roi
+        }]).then(dataUserRoiBonnus => {
+            for (userRoi of dataUserRoiBonnus) {
+                WebSocketService.sendToOneClient(userRoi._id, {
+                    action: "my-profit",
+                    data: {
+                        //?? why send userId
+                        userId: userRoi._id,
+                        profit: userRoi.roi,
+                    },
+                })
+            }
+            console.log("databonus", dataUserRoiBonnus);
+        }).catch(e => {
+            console.log(e);
+        })
 
 
-        //find affilate
-        const affilate = await UserModel.findOne({_id: userId});
 
-
-        sparkles.emit('my-event', {my: 'event'});
-        if (affilate.ReferralId !== '') {
-
-            const Userss = await UserModel.findOne({_id: affilate.ReferralId})
-
+        if (user.ReferralId) {
             // update amount for referral
-            const Referral = await UserModel.findOneAndUpdate({
-                _id: affilate.ReferralId,
-                // "balance.available": {$gte: ticketVals * 0.01}
+            UserModel.findOneAndUpdate({
+                _id: user.ReferralId,
             }, {
                 $inc: {
                     "balance.available": +referralBonus,
@@ -140,76 +159,91 @@ exports.UpdateTicket = async  function ({valTicket, userId, roundId}) {
                 $push: {
                     tranferHistory: {
                         side: "in",
-                        symbol: "BKT",
-                        fee: 0,
+                        symbol: "USD",
                         total: referralBonus,
-                        from: userId,
-                        to: affilate.ReferralId,
+                        from: user.userName,
+                        to: user.ReferralId,
                         time: Date.now(),
                         type: "ref",
-                        note: "Received Referral from " + userId
+                        note: "Received Referral from " + user.userName
                     }
                 }
-            })
-            const rr = await RoundModel.findOneAndUpdate({
-                    roundId: roundId,
-                },
-                {
-                    $push: {
-                        refLog: {
-                            userRef: affilate.ReferralId,
-                            amount: referralBonus
-                        }
-                    }
-                })
+            }).catch(e => console.log(e))
 
-            await UserRef.create({
-                UserId: affilate.ReferralId,
-                from: userId,
-                RoundId: roundId,
-                UserNameRef: affilate.userName,
-                NameUser: Userss.userName
-            })
+            RoundModel.findOneAndUpdate({
+                roundId: roundId,
+            }, {
+                $push: {
+                    refLog: {
+                        userRef: user.ReferralId,
+                        amount: referralBonus
+                    }
+                }
+            }).catch(e => console.log(e))
+
+            UserModel.findOne({ _id: user.ReferralId })
+                .then(userRef => UserRef.create({
+                    UserId: user.ReferralId,
+                    from: userId,
+                    RoundId: roundId,
+                    UserNameRef: user.userName,
+                    NameUser: userRef.userName
+                }))
+                .catch(e => console.log(e))
 
         } else {
             //if not have referral , update for fund company
             builder += referralBonus;
         }
-        // console.log('fundupdate', fundMoney)
-        // console.log('updattekeft', ticketdividedLeft);
-        //get amount to company
-        const fundUpdate = await RoundModel.findOneAndUpdate({
-                roundId: roundId,
-            }, {
-                $inc: {
-                    "revenue.company": +companyBonus,
-                    "revenue.builder": +builder,
-                    "fund.total44": (fundMoney + ticketdividedLeft),
-                }
-            },
-            {new: true}
-        )
-        if (fundUpdate) {
-            //Convert and send to socket
-            let fundMoneyArray = fundUpdate.fund.total44.toFixed(2).toString().replace(".", "").split("").reverse();
-            let dataSocket = ["0", "0", "0", "0", "0", "0", "0", "0", "0"];
-            let dataSocketLength = dataSocket.length - 1;
-            for (const numb of fundMoneyArray) {
-                dataSocket[dataSocketLength] = numb;
-                dataSocketLength = dataSocketLength - 1;
-            }
-            WebSocketService.sendToAllClient({
-                action: "count-money",
-                data: dataSocket,
-            })
-        }
 
+        console.log('fundupdate', fundMoney)
+        console.log('roileft after devide', roileft);
+
+        RoundModel.findOneAndUpdate({
+            roundId,
+        }, {
+            $inc: {
+                "revenue.company": +companyBonus,
+                "revenue.builder": +builder,
+                "fund.total44": (fundMoney + roileft),
+                "totalTicket": 1
+            }
+        }).then(fundUpdate => {
+            if (fundUpdate) {
+                //Convert and send to socket
+                let fundMoneyArray = fundUpdate.fund.total44.toFixed(2).toString().replace(".", "").split("").reverse();
+                let dataSocket = ["0", "0", "0", "0", "0", "0", "0", "0", "0"];
+                let dataSocketLength = dataSocket.length - 1;
+                for (const numb of fundMoneyArray) {
+                    dataSocket[dataSocketLength] = numb;
+                    dataSocketLength = dataSocketLength - 1;
+                }
+                WebSocketService.sendToAllClient({
+                    action: "count-money",
+                    data: dataSocket,
+                })
+            }
+        })
+
+
+        WebSocketService.sendToOneClient(user._id, {
+            action: "notification",
+            data: {
+                message: "You bought a ticket success",
+                type: "success"
+            },
+        })
+
+    } else {
+        console.log("user balance don't enough")
+        WebSocketService.sendToOneClient(user._id, {
+            action: "notification",
+            data: {
+                message: "Your balance don't enough",
+                type: "failed"
+            },
+        })
     }
 
-    await RoundModel.findOneAndUpdate({roundId: roundId}, {
-        $inc: {"totalTicket": 1}
-    })
-    console.timeEnd("timetake")
-
-
+    console.log("timetake", Date.now() - estTime, "ms")
 }

@@ -9,7 +9,8 @@ const TicketSchema = new Schema({
     postionInRound: { type: Number, default: 500 },
     isDevided: { type: Boolean, default: false },
     roundId: { type: String, default: "0" },
-    userName: { type: String }
+    userName: { type: String, default: "" },
+    bulkId: { type: String, default: "" }
 }, {
     timestamps: true,
     versionKey: false

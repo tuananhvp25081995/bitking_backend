@@ -9,6 +9,13 @@ exports.DivedRound = async function ({ roundId }) {
         res.status(400).json({ message: "Round id cannot been null" });
     } else {
         try {
+
+
+            let allticketBefore = await TicketModel.find({ roundId })
+            allticketBefore.forEach(item => {
+                console.log(`ticket postion ${item.postionInRound} ${item.userName} ${item.roi}`);
+            })
+
             var Round = await RoundModel.findOne({ roundId });
             if (!Round.active) {
                 console.log(`round ${roundId} active: false => cancel divided`);
@@ -31,7 +38,7 @@ exports.DivedRound = async function ({ roundId }) {
             var divided_3 = fundData * 0.02; //top1, last 1,2
             var divided_4 = fundData * 0.02; //top 20 ref
             var divided_5 = fundData * 0.03; // develop fund
-            var divided_6 = fundData * 0.06; // quy khac
+            var divided_6 = fundData * 0.06; // quy khac, tong support thi truong
 
             await RoundModel.findOneAndUpdate({ roundId }, {
                 "devide.total75": dividedAll,
@@ -213,6 +220,10 @@ exports.DivedRound = async function ({ roundId }) {
                     }
                 })
             }
+            let allticket = await TicketModel.find({ roundId })
+            allticket.forEach(item => {
+                console.log(`ticket postion ${item.postionInRound} ${item.userName} ${item.roi}`);
+            })
             await RoundModel.findOneAndUpdate({ roundId }, { active: false });
 
         } catch (err) {

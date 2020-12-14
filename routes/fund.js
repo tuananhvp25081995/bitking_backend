@@ -1,7 +1,10 @@
 var express = require('express');
 var router = express.Router();
-const FuncController = require('../controller/FundController');
+let cronRound = require("../until/roundUntil/cronRoundDivided")
 
-router.post('/divide', FuncController.Divide)
+router.post('/divide', (req, res) => {
+    cronRound.roundDivide()
+    res.send("got it")
+})
 
 module.exports = router;
