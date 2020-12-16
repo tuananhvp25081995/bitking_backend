@@ -9,10 +9,15 @@ exports.DivedRound = async function ({ roundId }) {
         res.status(400).json({ message: "Round id cannot been null" });
     } else {
         try {
-
-
-            let allticketBefore = await TicketModel.find({ roundId })
-            allticketBefore.forEach(item => {
+            let Allticket = await TicketModel.find({ roundId }, {
+                userId: 1,
+                roi: 1,
+                userName: 1,
+                createdAt: 1,
+                bulkId: 1,
+                postionInRound: 1
+            }, { sort: { "createdAt": 1 } })
+            Allticket.forEach(item => {
                 console.log(`ticket postion ${item.postionInRound} ${item.userName} ${item.roi}`);
             })
 
@@ -21,24 +26,20 @@ exports.DivedRound = async function ({ roundId }) {
                 console.log(`round ${roundId} active: false => cancel divided`);
                 return
             }
+
             var fundData = Round.fund.total44; // 100% of 44% from ticket
-            var Allticket = await TicketModel.find({ roundId });
-            const Allticketvalid = await TicketModel.find({
-                roundId,
-                roi: { $lt: 10 }
-            }, null, { sort: { "postionInRound": 1 } })
-
-            console.log(Allticketvalid);
-
             let ticketClaimed = []
-
             var dividedAll = fundData * 0.75; // divided all number
-            var divided_1 = fundData * 0.1; // divided
+            var divided_1 = fundData * 0.1; // divided random 4-6%
             var divided_2 = fundData * 0.02; //for people don't claim
             var divided_3 = fundData * 0.02; //top1, last 1,2
             var divided_4 = fundData * 0.02; //top 20 ref
             var divided_5 = fundData * 0.03; // develop fund
             var divided_6 = fundData * 0.06; // quy khac, tong support thi truong
+
+
+            console.log("total to divide: ", fundData)
+            console.log({ dividedAll, divided_1, divided_2, divided_3, divided_4, divided_5, divided_6 });
 
             await RoundModel.findOneAndUpdate({ roundId }, {
                 "devide.total75": dividedAll,
@@ -59,34 +60,29 @@ exports.DivedRound = async function ({ roundId }) {
             const leftAll = dividedAll - numberAll * 10;
             divided_1 += leftAll;
 
-
-            for (tk of Allticketvalid) {
-
-                let amount = 10 - tk.roi;
-                if (dividedAll <= 0) break
-                if (dividedAll <= amount) amount = dividedAll
-
-                await TicketModel.updateOne({ _id: tk._id },
-                    {
-                        $inc: { "roi": amount }
-                    })
-                ticketClaimed.push(tk._id)
-                await UserModel.findByIdAndUpdate(tk.userId, {
-                    $inc: {
-                        "balance.available": amount
-                    }
-                })
-                console.log(`add roi enought 10$ for user ${tk.userId} with val: ${amount}`);
+            for (tick of Allticket) {
+                if (dividedAll >= 10) {
+                    let newTick = await TicketModel.findOneAndUpdate({ _id: tick._id },
+                        {
+                            $inc: { "roi": 10 }
+                        }, { new: true })
+                    ticketClaimed.push(tick._id)
+                    console.log("ticketClaimed", ticketClaimed);
+                    dividedAll -= 10
+                    console.log(`add 10$ to roi for user, ${tick.userName}, val after is: ${newTick.roi}, ticket postision ${tick.postionInRound}`);
+                } else {
+                    console.log("divide all small than 10, break forloop", dividedAll);
+                    break
+                }
                 ticketDevidedCount++
-                dividedAll -= amount;
             }
 
 
+            //divideRandom4-6$ for ticket
             console.log("total divided_1 for 4-6$ ramdom", divided_1);
             let divideRandom4_6 = []
-
             while (divided_1 > 0) {
-                const vals = Math.round(Math.random() * 2) + 4;
+                const vals = Math.random() * 2 + 4;
                 if (vals >= divided_1) {
                     divideRandom4_6.push(divided_1)
                     break
@@ -96,60 +92,49 @@ exports.DivedRound = async function ({ roundId }) {
             }
 
             console.log("arr devide 4-6", divideRandom4_6);
-            for (tk of Allticketvalid) {
+
+            let allTicketNotDevide = await TicketModel.find({ "roi": { $lt: 10 } }, {
+                roi: 1,
+                userName: 1,
+            })
+            console.log("allTicketNotDevide", allTicketNotDevide);
+
+
+            for (tk of allTicketNotDevide) {
                 if (!divideRandom4_6.length) break
                 if (ticketClaimed.includes(tk._id)) continue
-                let val = Number(divideRandom4_6.pop())
-                await TicketModel.updateOne({
+                let val = Number(divideRandom4_6.shift())
+                let t = await TicketModel.findOneAndUpdate({
                     _id: tk._id,
                 }, {
                     $inc: { "roi": val }
-                });
-
-                await UserModel.updateOne({
-                    _id: tk.userId
-                }, {
-                    $inc: {
-                        "balance.available": val
-                    }
-                })
-                console.log(`divide random ${val} for user ${tk.userId}`);
+                }, { new: true });
+                ticketClaimed.push(t._id)
+                console.log("ticketClaimed", ticketClaimed);
+                console.log(`divide random ${val} for user ${t.userName} and roi after is: ${t.roi}, tick postision ${t.postionInRound}`);
                 ticketDevidedCount++
-                ticketClaimed.push(tk._id)
             }
-            console.log("divideRandom4_6 after divide", divideRandom4_6);
-
+            console.log("divideRandom4_6 left after divide: ", divideRandom4_6);
 
             //for 2% all devide ticket đin't claim
-            console.log(divided_2, Allticketvalid.length, ticketDevidedCount);
-            if (!(Allticketvalid.length - ticketDevidedCount)) {
-                console.log("all ticket was devided!!, skip 2% for all");
-            } else {
-                let avg = divided_2 / (Allticketvalid.length - ticketDevidedCount)
-                console.log("2% for all avg", avg);
-                for (tk in Allticketvalid) {
-                    if (divided_2 <= 0) break
-                    if (avg > divided_2) avg = divided_2
-                    if (ticketClaimed.includes(tk._id)) continue
-                    await TicketModel.updateOne({
-                        _id: tk._id,
-                    }, {
-                        $inc: { "roi": avg }
-                    });
-
-                    await UserModel.updateOne({
-                        _id: tk.userId
-                    }, {
-                        $inc: {
-                            "balance.available": avg
-                        }
-                    })
-                    console.log("2% for all for user", tk.userId);
-                    divided_2 -= avg
+            let avg = divided_2 / (Allticket.length - ticketDevidedCount)
+            console.log("total 2%", divided_2, "2% for all avg is: ", avg);
+            for (tk of Allticket) {
+                if (divided_2 <= 0) {
+                    console.log("divided_2 out");
+                    break;
                 }
+                if (avg > divided_2) avg = divided_2
+                if (ticketClaimed.includes(tk._id)) continue
+                let t = await TicketModel.findOneAndUpdate({
+                    _id: tk._id,
+                }, {
+                    $inc: { "roi": avg }
+                }, { new: true });
+
+                console.log("2% for all for user", t.userName, "roi after:", t.roi, "ticket postision", t.postionInRound);
+                divided_2 -= avg
             }
-
-
 
             //first ticket and lastest 2 ticket
             let winner_vals = divided_4 / 3;
@@ -178,6 +163,7 @@ exports.DivedRound = async function ({ roundId }) {
                     $inc: { "balance.available": winner_vals },
                     $push: {
                         tranferHistory: {
+                            symbol: "USD",
                             side: "in",
                             total: winner_vals,
                             from: "System",
@@ -188,7 +174,6 @@ exports.DivedRound = async function ({ roundId }) {
                         }
                     }
                 })
-
             }
 
             // // 2% to 20% max affilated
@@ -220,12 +205,17 @@ exports.DivedRound = async function ({ roundId }) {
                     }
                 })
             }
-            let allticket = await TicketModel.find({ roundId })
-            allticket.forEach(item => {
-                console.log(`ticket postion ${item.postionInRound} ${item.userName} ${item.roi}`);
+
+            Allticket = await TicketModel.find({ roundId })
+            Allticket.forEach(async (item) => {
+                console.log("postision", item.postionInRound, "update balance for user", item.userName, "value roi", item.roi);
+                let u = await UserModel.findOneAndUpdate({ _id: item.userId }, {
+                    $inc: {
+                        "balance.available": item.roi
+                    }
+                })
             })
             await RoundModel.findOneAndUpdate({ roundId }, { active: false });
-
         } catch (err) {
             console.log(err);
         }

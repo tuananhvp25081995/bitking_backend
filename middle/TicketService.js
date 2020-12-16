@@ -8,8 +8,6 @@ var randomNumber = require('randomstring');
 const WebSocketService = require("../services/ws.service");
 const moment = require("moment");
 
-var sparkles = require('sparkles')();
-
 exports.UpdateTicket = async function ({ userId, roundId, bulkId }) {
     console.log({ userId, roundId });
     let estTime = Date.now()
@@ -192,6 +190,7 @@ exports.UpdateTicket = async function ({ userId, roundId, bulkId }) {
                 .catch(e => console.log(e))
 
         } else {
+            console.log("this user don't have ref, add to com", user.userName);
             //if not have referral , update for fund company
             builder += referralBonus;
         }

@@ -3,6 +3,7 @@ var md5 = require('md5');
 const TicketService = require('../middle/TicketService')
 const UserModel = mongoose.model("UserModel");
 const RoundModel = mongoose.model("RoundModel");
+const queue = require('../lib/queue');
 
 exports.Buy = async function (req, res) {
     let { bulkId, userId } = req.body
@@ -21,15 +22,12 @@ exports.Buy = async function (req, res) {
         res.status(400).json({ error: "Missing userId" })
     } else if (checkRound.active !== true) {
         res.status(400).json({ error: "You cannot buy ticket at this time" })
-    } else if (!roundId) {
-        res.status(400).json({ error: "Cannot found round id" })
     }
     else {
-        try {
-            await TicketService.UpdateTicket({ bulkId, userId, roundId })
-        } catch (err) {
-            console.log("err in Updateticket", err);
-            return res.status(400).json({ message: "something went wrong" })
+        queue.enqueue({ bulkId, userId, roundId })
+        const value = queue.length()
+        if (value == 1) {
+            queue.checkQueue()
         }
         res.status(200).json({ message: "OK" })
     }
