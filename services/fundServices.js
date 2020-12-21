@@ -93,7 +93,7 @@ exports.DivedRound = async function ({ roundId }) {
 
             console.log("arr devide 4-6", divideRandom4_6);
 
-            let allTicketNotDevide = await TicketModel.find({ "roi": { $lt: 10 } }, {
+            let allTicketNotDevide = await TicketModel.find({ "roi": { $lt: 10 }, roundId }, {
                 roi: 1,
                 userName: 1,
             })
