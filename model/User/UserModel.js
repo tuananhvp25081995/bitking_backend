@@ -103,15 +103,20 @@ const UserSchema = new Schema({
     //for: user-user tranfer, ref revenue claim, reward claim
     tranferHistory: [{
         side: { type: String, default: "out", enum: ["in", "out"] },
-        symbol: { type: String, default: "BKT" },
+        symbol: { type: String, default: "USD" },
         fee: { type: Number, default: 0 },
         total: { type: Number, default: 0 },
         from: { type: String, default: "admin" },
         to: { type: String, default: "admin" },
         time: { type: Date, default: Date.now() },
-        type: { type: String, default: "normal", enum: ["normal", "ref", "reward3", "reward20", "buyBKT"] },
+        type: { type: String, default: "normal", enum: ["normal", "ref", "reward3", "reward20", "buyBKT", "marketsuport", "agency"] },
         note: { type: String, default: "" }
     }],
+
+    agencyLog: [{
+        packageValue: { type: Number, default: 100 },
+        time: { type: Date, default: Date.now() },
+    }]
 }, {
     timestamps: true,
     versionKey: false

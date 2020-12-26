@@ -1,7 +1,7 @@
 const { v1: uuidv1 } = require('uuid');
-var Websocket = require('ws')
+let Websocket = require('ws')
 
-const   WebSocketService = {}
+const WebSocketService = {}
 
 let wss;
 let webSockets = {}
@@ -10,10 +10,10 @@ WebSocketService.connect = (port) => {
     wss = new Websocket.Server({ port: port });
     wss.on('connection', function (ws, req) {
         ws.id = uuidv1()
-        var userID = req.url.substr(1)
+        let userID = req.url.substr(1)
         if (!(userID in webSockets)) {
             webSockets[userID] = {}
-        } 
+        }
         webSockets[userID][ws.id] = ws
         console.log('connected: ' + userID + ' in ' + ws.id)
 

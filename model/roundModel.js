@@ -29,6 +29,8 @@ let schemaroundModel = new Schema(
             develop: { type: Number, default: 0 },
             //6% to another fund
             another: { type: Number, default: 0 },
+            //1% to agency
+            agency: { type: Number, default: 0 },
         },
 
         devide: {

@@ -1,11 +1,11 @@
 const mongoose = require("mongoose");
-var md5 = require('md5');
+let md5 = require('md5');
 const UserModel = mongoose.model("UserModel");
 const TicketModel = mongoose.model("ticketModel");
 const RoundModel = mongoose.model("RoundModel");
 const UserRef = mongoose.model("UserRef");
-var randomNumber = require('randomstring');
-const WebSocketService = require("../services/ws.service");
+let randomNumber = require('randomstring');
+const WebSocketService = require("./ws.service");
 const moment = require("moment");
 
 exports.UpdateTicket = async function ({ userId, roundId, bulkId }) {
@@ -14,7 +14,8 @@ exports.UpdateTicket = async function ({ userId, roundId, bulkId }) {
 
     let ticketVals = 10; // all money of ticket = 100%
     let referralBonus = ticketVals * 0.01; // money of referral = 1%
-    let companyBonus = ticketVals * 0.04; // money of company = 4%
+    let companyBonus = ticketVals * 0.03; // money of company = 4%
+    let agencyBonus = ticketVals * 0.01; // money of agency = 1%
     let builder = ticketVals * 0.02; // money of builder = 2%
     let fundMoney = ticketVals * 0.44; // money of fund = 44 %
 
@@ -202,14 +203,14 @@ exports.UpdateTicket = async function ({ userId, roundId, bulkId }) {
             roundId,
         }, {
             $inc: {
-                "revenue.company": +companyBonus,
-                "revenue.builder": +builder,
+                "revenue.company": companyBonus,
+                "revenue.builder": builder,
+                "fund.agency": agencyBonus,
                 "fund.total44": (fundMoney + roileft),
                 "totalTicket": 1
             }
         }).then(fundUpdate => {
             if (fundUpdate) {
-                //Convert and send to socket
                 let fundMoneyArray = fundUpdate.fund.total44.toFixed(2).toString().replace(".", "").split("").reverse();
                 let dataSocket = ["0", "0", "0", "0", "0", "0", "0", "0", "0"];
                 let dataSocketLength = dataSocket.length - 1;
