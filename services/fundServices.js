@@ -260,21 +260,13 @@ exports.DivedRound = async function ({ roundId }) {
         }
 
         if (agency) {
-            let today = dayjs().utc(0).toISOString();
-            let endPackage = dayjs().utc(0).add(1, 'month').toISOString()
+            let oldestTime = dayjs().utc(0).add(-3, 'month').toISOString()
             let allAgency = await UserModel.find({
-                $and: [
-                    {
-                        "agencyLog.time": { $gt: today }
-                    }, {
-                        "agencyLog.time": { $lte: endPackage }
-                    }
-                ]
+                "agencyLog.time": { $gt: oldestTime }
             }, {
                 userName: 1
             }).lean()
-
-            console.log({ today, endPackage, allAgency });
+            console.log({ oldestTime, allAgency });
             if (allAgency.length) {
                 let avg = agency / allAgency.length
                 console.log({ avg });
@@ -282,7 +274,7 @@ exports.DivedRound = async function ({ roundId }) {
                     console.log("avg false, off agency divide!", roundId);
                 } else {
                     for (let one of allAgency) {
-                        let u = await UserModel.findByIdAndDelete(one._id, {
+                        let u = await UserModel.findByIdAndUpdate(one._id, {
                             $inc: {
                                 "balance.available": avg
                             },
